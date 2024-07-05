@@ -76,7 +76,9 @@ defmodule FetchFavicon do
     with {:ok, body} <- get_html_from_url(url) do
       parse(url, body, fetch?)
     else
-      _ -> nil
+      e -> 
+        debug(e)
+        nil
     end
   end
 
@@ -122,13 +124,19 @@ defmodule FetchFavicon do
   defp get_image_from_url(url) do
     case get_html(url) do
       {:ok, %{body: ""}} ->
+                        debug("body was empty")
         nil
 
       {:ok, %{body: body, headers: headers_list}} ->
         case Enum.into(headers_list, %{}) do
-          %{"content-encoding" => _encoding} -> nil
+          %{"content-encoding" => _encoding} -> 
+            debug(headers_list, "found unexpected header (content-encoding)")
+            nil
+          %{"content-type" => ["image" <> _]} -> {:ok, body}
           %{"content-type" => "image" <> _} -> {:ok, body}
-          _ -> nil
+          _ -> 
+                        debug(headers_list, "did not find expected header (content-type: image)")
+nil
         end
 
       other ->
@@ -142,8 +150,11 @@ defmodule FetchFavicon do
       {:ok, %{headers: headers_list}} ->
         # IO.inspect(headers_list)
         case Enum.into(headers_list, %{}) do
+          %{"content-type" => ["image" <> _]} -> {:ok, url}
           %{"content-type" => "image" <> _} -> {:ok, url}
-          _ -> nil
+          _ -> 
+                                    debug(headers_list, "did not find expected header (content-type: image)")
+nil
         end
 
       # |> IO.inspect(label: "get_valid_image_url")
