@@ -1,22 +1,9 @@
 defmodule Faviconic do
+  @moduledoc "./README.md" |> File.stream!() |> Enum.drop(1) |> Enum.join()
   import Untangle
   @user_agent "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
   @timeout_ms 3_000
-  @moduledoc """
-  Used to retrieve a favicon from a website.
-  """
 
-  @doc """
-  Tries to obtain a favicon for the site.
-  It first tries the url/favicon.ico (for speed).
-  Then it tries to find a path to an icon in the HTML and then fetch that.
-  Lastly it uses the google favicon service to retrieve a favicon.
-
-  If you do not pass `http://` or `https://`, `http://` is assumed.
-
-  Returns `{:ok, image}` if successful and `{:error, "failed to find image"}` if unsuccessful.
-
-  """
 
   @doc """
   Fetch the binary contents of a favicon file for a domain 
@@ -27,6 +14,13 @@ defmodule Faviconic do
 
   @doc """
   Get the URL of a favicon file for a domain (or fetch its binary contents by setting the `fetch_image?` param to true)
+
+  Tries to obtain a favicon for the site.
+  It first tries the url/favicon.ico (for speed).
+  Then it uses the some third-party favicon services to try retrieving a favicon.
+  Lastly it tries to find a path to an icon URL in the HTML page.
+
+  If you do not pass `http://` or `https://`, `http://` is assumed.
   """
   def get(url, fetch_image? \\ false)
 
@@ -47,11 +41,12 @@ defmodule Faviconic do
   def get(url, _), do: {:error, :invalid_uri}
 
   @doc """
-  Find a favicon URL (or fetch its binary contents by setting the fetch? param to true)
-  Parses an HTML page and tries to find a favicon in it (if provided), and otherwise tries other techniques
+  Find a favicon URL (or fetch its binary contents by setting the `fetch_image?` param to true) given HTML page contents. *Use this if you already fetched the HTML page to avoid doing it twice.*
+
+  Parses the HTML and tries to find a favicon in it (if provided), and otherwise tries other techniques.
   """
-  def find(url, html_body, fetch? \\ false) do
-    with {:ok, image_or_url} <- parse(url, html_body, fetch?) || get(url, fetch?) do
+  def find(url, html_body, fetch_image? \\ false) do
+    with {:ok, image_or_url} <- parse(url, html_body, fetch_image?) || get(url, fetch_image?) do
       {:ok, image_or_url}
     else
       _ ->
@@ -62,10 +57,10 @@ defmodule Faviconic do
   @doc """
   Parses an HTML page and tries to find a favicon URL in it
   """
-  def parse(url, html_body, fetch? \\ false) do
+  def parse(url, html_body, fetch_image? \\ false) do
     with icon_path when is_binary(icon_path) <- get_icon_path_html(html_body) do
       get_absolute_image_path(url, icon_path)
-      |> check_url(fetch?)
+      |> check_url(fetch_image?)
     else
       _ -> nil
     end
@@ -88,7 +83,7 @@ defmodule Faviconic do
     end
   end
 
-  def fetch_from_third_parties(url, fetch_image? \\ true) do
+  defp fetch_from_third_parties(url, fetch_image? \\ true) do
     fetch_from_duck_duck_go(url, fetch_image?) ||
       fetch_from_google(url, fetch_image?)
   end
