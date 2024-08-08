@@ -4,14 +4,14 @@ defmodule FetchFaviconTest do
   import Mock
 
   test "invalid html returned" do
-    with_mock Req, get: fn  url, _ -> {:ok, ""} end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com")
+    with_mock Req, get: fn url, _ -> {:ok, ""} end do
+      assert {:error, _} = Faviconic.fetch("reddit.com")
     end
   end
 
   test "error returned" do
-    with_mock Req, get: fn  url, _ -> {:error, "error message"} end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com")
+    with_mock Req, get: fn url, _ -> {:error, "error message"} end do
+      assert {:error, _} = Faviconic.fetch("reddit.com")
     end
   end
 
@@ -36,7 +36,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://reddit.com/favicon.ico" ->
             {:error, "404"}
@@ -52,7 +53,7 @@ defmodule FetchFaviconTest do
             {:error, "404"}
         end
       end do
-      assert {:ok, _} = FetchFavicon.fetch("reddit.com")
+      assert {:ok, _} = Faviconic.fetch("reddit.com")
     end
   end
 
@@ -67,7 +68,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://reddit.com/favicon.ico" ->
             {:ok, response}
@@ -76,7 +78,7 @@ defmodule FetchFaviconTest do
             nil
         end
       end do
-      assert {:ok, _} = FetchFavicon.fetch("reddit.com/")
+      assert {:ok, _} = Faviconic.fetch("reddit.com/")
     end
   end
 
@@ -101,7 +103,7 @@ defmodule FetchFaviconTest do
             {:error, "error message"}
         end
       end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com/")
+      assert {:error, _} = Faviconic.fetch("reddit.com/")
     end
   end
 
@@ -117,7 +119,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://reddit.com/favicon.ico" ->
             {:ok, response}
@@ -126,7 +129,7 @@ defmodule FetchFaviconTest do
             {:error, "error message"}
         end
       end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com/")
+      assert {:error, _} = Faviconic.fetch("reddit.com/")
     end
   end
 
@@ -141,7 +144,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://reddit.com/favicon.ico" ->
             {:ok, response}
@@ -150,7 +154,7 @@ defmodule FetchFaviconTest do
             {:error, "error message"}
         end
       end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com/")
+      assert {:error, _} = Faviconic.fetch("reddit.com/")
     end
   end
 
@@ -166,7 +170,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://reddit.com/favicon.ico" ->
             {:error, "error message"}
@@ -178,7 +183,7 @@ defmodule FetchFaviconTest do
             {:error, "error message"}
         end
       end do
-      assert {:error, _} = FetchFavicon.fetch("reddit.com/")
+      assert {:error, _} = Faviconic.fetch("reddit.com/")
     end
   end
 
@@ -190,7 +195,8 @@ defmodule FetchFaviconTest do
       status: 200
     }
 
-    with_mock Req, get: fn  url, _ ->
+    with_mock Req,
+      get: fn url, _ ->
         case url do
           "http://www.reddit.com/favicon.ico" ->
             {:ok, response}
@@ -199,7 +205,7 @@ defmodule FetchFaviconTest do
             nil
         end
       end do
-      assert {:ok, _} = FetchFavicon.fetch("www.reddit.com/")
+      assert {:ok, _} = Faviconic.fetch("www.reddit.com/")
     end
   end
 
@@ -230,7 +236,7 @@ defmodule FetchFaviconTest do
             {:error, "error messsage"}
         end
       end do
-      assert {:ok, _} = FetchFavicon.fetch("reddit.com")
+      assert {:ok, _} = Faviconic.fetch("reddit.com")
     end
   end
 end

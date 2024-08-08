@@ -1,4 +1,4 @@
-defmodule FetchFavicon do
+defmodule Faviconic do
   import Untangle
   @user_agent "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
   @timeout_ms 3_000
@@ -26,21 +26,25 @@ defmodule FetchFavicon do
   end
 
   @doc """
-  Get the URL contents of a favicon file for a domain (or fetch its binary contents by setting the fetch? param to true)
+  Get the URL of a favicon file for a domain (or fetch its binary contents by setting the `fetch_image?` param to true)
   """
-  def get(url, fetch? \\ false) 
-  def get(url, fetch?) when is_binary(url) do
+  def get(url, fetch_image? \\ false)
+
+  def get(url, fetch_image?) when is_binary(url) do
     {absolute_url, host} = process_uri(url)
 
     with {:ok, image} <-
-           fetch_default(absolute_url, fetch?) || fetch_from_third_parties(host, fetch?) || fetch_from_html(absolute_url, fetch?) do
+           fetch_default(absolute_url, fetch_image?) ||
+             fetch_from_third_parties(host, fetch_image?) ||
+             fetch_from_html(absolute_url, fetch_image?) do
       {:ok, image}
     else
       e ->
         error(e, "failed to find favicon for #{url}")
     end
   end
-  def get(url, fetch?), do: {:error, :invalid_uri}
+
+  def get(url, _), do: {:error, :invalid_uri}
 
   @doc """
   Find a favicon URL (or fetch its binary contents by setting the fetch? param to true)
@@ -67,39 +71,41 @@ defmodule FetchFavicon do
     end
   end
 
-  defp fetch_default(url, fetch? \\ true) do
-    URI.parse(url) |> URI.merge("/favicon.ico") |> to_string()
-    |> check_url(fetch?)
+  defp fetch_default(url, fetch_image? \\ true) do
+    URI.parse(url)
+    |> URI.merge("/favicon.ico")
+    |> to_string()
+    |> check_url(fetch_image?)
   end
 
-  defp fetch_from_html(url, fetch? \\ true) do
+  defp fetch_from_html(url, fetch_image? \\ true) do
     with {:ok, body} <- get_html_from_url(url) do
-      parse(url, body, fetch?)
+      parse(url, body, fetch_image?)
     else
-      e -> 
+      e ->
         debug(e)
         nil
     end
   end
 
-  def fetch_from_third_parties(url, fetch? \\ true) do
-    fetch_from_duck_duck_go(url, fetch?) ||
-             fetch_from_google(url, fetch?)
+  def fetch_from_third_parties(url, fetch_image? \\ true) do
+    fetch_from_duck_duck_go(url, fetch_image?) ||
+      fetch_from_google(url, fetch_image?)
   end
 
-  defp fetch_from_duck_duck_go(domain, fetch? \\ true) do
-    check_url("https://icons.duckduckgo.com/ip3/#{domain}.ico", fetch?)
+  defp fetch_from_duck_duck_go(domain, fetch_image? \\ true) do
+    check_url("https://icons.duckduckgo.com/ip3/#{domain}.ico", fetch_image?)
   end
 
-  defp fetch_from_google(domain, fetch? \\ true) do
-    check_url("https://www.google.com/s2/favicons?domain=#{domain}", fetch?)
+  defp fetch_from_google(domain, fetch_image? \\ true) do
+    check_url("https://www.google.com/s2/favicons?domain=#{domain}", fetch_image?)
   end
 
   defp get_icon_path_html(body) do
     case Floki.find(body, "link[rel=icon]") do
       [] ->
         case Floki.find(body, "link[rel*=icon]") do
-          [] -> 
+          [] ->
             nil
 
           links ->
@@ -118,25 +124,30 @@ defmodule FetchFavicon do
     # |> IO.inspect(label: "first_icon_from_links")
   end
 
-  defp check_url(url, _fetch? = true), do: get_image_from_url(url)
+  defp check_url(url, _fetch_image? = true), do: get_image_from_url(url)
   defp check_url(url, _), do: get_valid_image_url(url)
 
   defp get_image_from_url(url) do
     case get_html(url) do
       {:ok, %{body: ""}} ->
-                        debug("body was empty")
+        debug("body was empty")
         nil
 
       {:ok, %{body: body, headers: headers_list}} ->
         case Enum.into(headers_list, %{}) do
-          %{"content-encoding" => _encoding} -> 
+          %{"content-encoding" => _encoding} ->
             debug(headers_list, "found unexpected header (content-encoding)")
             nil
-          %{"content-type" => ["image" <> _]} -> {:ok, body}
-          %{"content-type" => "image" <> _} -> {:ok, body}
-          _ -> 
-                        debug(headers_list, "did not find expected header (content-type: image)")
-nil
+
+          %{"content-type" => ["image" <> _]} ->
+            {:ok, body}
+
+          %{"content-type" => "image" <> _} ->
+            {:ok, body}
+
+          _ ->
+            debug(headers_list, "did not find expected header (content-type: image)")
+            nil
         end
 
       other ->
@@ -150,11 +161,15 @@ nil
       {:ok, %{headers: headers_list}} ->
         # IO.inspect(headers_list)
         case Enum.into(headers_list, %{}) do
-          %{"content-type" => ["image" <> _]} -> {:ok, url}
-          %{"content-type" => "image" <> _} -> {:ok, url}
-          _ -> 
-                                    debug(headers_list, "did not find expected header (content-type: image)")
-nil
+          %{"content-type" => ["image" <> _]} ->
+            {:ok, url}
+
+          %{"content-type" => "image" <> _} ->
+            {:ok, url}
+
+          _ ->
+            debug(headers_list, "did not find expected header (content-type: image)")
+            nil
         end
 
       # |> IO.inspect(label: "get_valid_image_url")
@@ -168,7 +183,6 @@ nil
   defp get_html_from_url(url) do
     case get_html(url) do
       {:ok, %{body: body, headers: headers_list}} ->
-
         case Enum.into(headers_list, %{}) do
           %{"content-type" => "text/html" <> _} -> {:ok, body}
           _ -> nil
@@ -188,19 +202,21 @@ nil
                receive_timeout: @timeout_ms,
                max_redirects: 3,
                retry: false,
-               adapter: Process.get(:req_adapter) || &Req.Steps.run_finch/1 # for mocks during testing
+               # for mocks during testing
+               adapter: Process.get(:req_adapter) || (&Req.Steps.run_finch/1)
              ) do
         {:ok, %{status: 200}} -> {:ok, response}
         _ -> nil
       end
     end
-  rescue e in RuntimeError ->
-    error(e)
-    nil
+  rescue
+    e in RuntimeError ->
+      error(e)
+      nil
   end
 
   defp get_headers(url) do
-    if full_uri?(url)  do
+    if full_uri?(url) do
       case {_code, response} =
              Req.head(
                url,
