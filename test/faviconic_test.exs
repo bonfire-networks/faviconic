@@ -1,4 +1,4 @@
-defmodule FetchFaviconTest do
+defmodule FaviconicTest do
   use ExUnit.Case
 
   import Mock

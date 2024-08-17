@@ -123,7 +123,7 @@ defmodule Faviconic do
   defp check_url(url, _), do: get_valid_image_url(url)
 
   defp get_image_from_url(url) do
-    case get_html(url) do
+    case fetch_url(url) do
       {:ok, %{body: ""}} ->
         debug("body was empty")
         nil
@@ -145,6 +145,9 @@ defmodule Faviconic do
             nil
         end
 
+      nil ->
+        nil
+      
       other ->
         debug(other, url)
         nil
@@ -176,7 +179,7 @@ defmodule Faviconic do
   end
 
   defp get_html_from_url(url) do
-    case get_html(url) do
+    case fetch_url(url) do
       {:ok, %{body: body, headers: headers_list}} ->
         case Enum.into(headers_list, %{}) do
           %{"content-type" => "text/html" <> _} -> {:ok, body}
@@ -188,7 +191,7 @@ defmodule Faviconic do
     end
   end
 
-  defp get_html(url) do
+  defp fetch_url(url) do
     if full_uri?(url) do
       case {_code, response} =
              Req.get(
@@ -201,7 +204,9 @@ defmodule Faviconic do
                adapter: Process.get(:req_adapter) || (&Req.Steps.run_finch/1)
              ) do
         {:ok, %{status: 200}} -> {:ok, response}
-        _ -> nil
+        other -> 
+          debug(other, url)
+          nil
       end
     end
   rescue
