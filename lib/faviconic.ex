@@ -250,7 +250,7 @@ defmodule Faviconic do
 
   defp process_uri(url) when is_binary(url) do
     case URI.parse(url) do
-      %{host: nil, path: path_as_host} -> {"http://#{path_as_host}", path_as_host}
+      %{scheme: nil, host: nil, path: path_as_host} when is_binary(path_as_host) -> {"http://#{path_as_host}", path_as_host}
       %{host: host} -> {url, host}
     end
   end
