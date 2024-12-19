@@ -38,7 +38,7 @@ defmodule Faviconic do
     end
   end
 
-  def get(url, _), do: {:error, :invalid_uri}
+  def get(url, _), do: error(url, "Tried to fetch an invalid URL")
 
   @doc """
   Find a favicon URL (or fetch its binary contents by setting the `fetch_image?` param to true) given HTML page contents. *Use this if you already fetched the HTML page to avoid doing it twice.*
