@@ -53,6 +53,7 @@ defmodule FaviconicTest do
             {:error, "404"}
         end
       end do
+      # FIXME
       assert {:ok, _} = Faviconic.fetch("reddit.com")
     end
   end
