@@ -201,7 +201,7 @@ defmodule Faviconic do
                max_redirects: 3,
                retry: false,
                # for mocks during testing
-               adapter: Process.get(:req_adapter) || (&Req.Steps.run_finch/1)
+               adapter: ProcessTree.get(:req_adapter) || (&Req.Steps.run_finch/1)
              ) do
         {:ok, %{status: 200}} -> {:ok, response}
         other -> 

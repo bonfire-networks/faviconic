@@ -28,6 +28,7 @@ defmodule Faviconic.MixProject do
       {:floki, "~> 0.32"},
       # error handling
       {:untangle, "~> 0.3"},
+      {:process_tree, "~> 0.2.1"},
       # For testing
       {:mock, "~> 0.3.0", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev}
