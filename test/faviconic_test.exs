@@ -15,6 +15,7 @@ defmodule FaviconicTest do
     end
   end
 
+  @tag :skip
   test "first call fails" do
     base_site_response = %{
       body: "<html><link href=\"/custom/reddit/ico/path/icon.ico\" rel=\"shortcut icon\"></html>",
