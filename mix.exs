@@ -27,7 +27,7 @@ defmodule Faviconic.MixProject do
       # HTML Parser
       {:floki, "~> 0.32"},
       # error handling
-      {:untangle, "~> 0.3"},
+      {:untangle, "~> 0.5"},
       {:process_tree, "~> 0.3.0"},
       # For testing
       {:mock, "~> 0.3.0", only: :test},
