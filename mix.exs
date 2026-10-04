@@ -24,6 +24,8 @@ defmodule Faviconic.MixProject do
     [
       # HTTP Client
       {:req, "~> 0.7"},
+      # refuses private/reserved addresses on every request and redirect hop
+      {:req_ssrf, "~> 0.2"},
       # HTML Parser
       {:floki, "~> 0.32"},
       # error handling
@@ -31,6 +33,9 @@ defmodule Faviconic.MixProject do
       {:process_tree, "~> 0.3.0"},
       # For testing
       {:mock, "~> 0.3.0", only: :test},
+      # mock pins meck ~> 0.9.2, which doesn't compile on OTP 29
+      {:meck, "~> 1.2", only: :test, override: true},
+      {:bypass, "~> 2.1", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end

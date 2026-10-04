@@ -185,20 +185,69 @@ defmodule Faviconic do
     end
   end
 
+  # shared by every request, since the URLs come from untrusted input (a page URL, or an icon link found in a fetched page)
+  defp req_options(opts) do
+    [
+      user_agent: @user_agent,
+      receive_timeout: @timeout_ms,
+      max_redirects: 3,
+      retry: false,
+      # for mocks during testing
+      adapter: ProcessTree.get(:req_adapter) || Req.Finch,
+      plugins: [&ssrf_guard/1]
+    ] ++ opts
+  end
+
+  # Refuses private, loopback and other reserved addresses, on the first request and on every redirect hop. A `host:port` in `:ssrf_allow_hosts` (e.g. a local dev instance) skips the check for that hop only, so a redirect from it to another private address is still refused.
+  defp ssrf_guard(request) do
+    request = ReqSSRF.attach(request, Application.get_env(:faviconic, :ssrf, []))
+
+    {before, rest} =
+      Enum.split_while(request.request_steps, fn {name, _} -> name != :ssrf_check end)
+
+    %{request | request_steps: before ++ [ssrf_allow_hosts: &ssrf_allow_host/1] ++ rest}
+  end
+
+  defp ssrf_allow_host(%{url: %URI{host: host, port: port}} = request) do
+    allowed =
+      ProcessTree.get(:ssrf_allow_hosts) || Application.get_env(:faviconic, :ssrf_allow_hosts, [])
+
+    Req.Request.put_option(request, :ssrf_check, "#{host}:#{port}" not in allowed)
+  end
+
+  defp max_bytes,
+    do: ProcessTree.get(:faviconic_max_bytes) || Application.get_env(:faviconic, :max_bytes, 1_000_000)
+
+  # Stops downloading once the body is over `max_bytes/0`, rather than reading all of it into memory first.
+  defp collect_up_to_max_bytes({:data, data}, {request, response}) do
+    body = response.body <> data
+
+    if byte_size(body) > max_bytes() do
+      {:halt, {request, %{response | body: :too_large}}}
+    else
+      {:cont, {request, %{response | body: body}}}
+    end
+  end
+
   defp fetch_url(url) do
     if full_uri?(url) do
       case {_code, response} =
              Req.get(
                url,
-               user_agent: @user_agent,
-               receive_timeout: @timeout_ms,
-               max_redirects: 3,
-               retry: false,
-               # for mocks during testing
-               adapter: ProcessTree.get(:req_adapter) || Req.Finch
+               req_options(
+                 # so the size limit counts the bytes actually received
+                 compressed: false,
+                 into: &collect_up_to_max_bytes/2
+               )
              ) do
-        {:ok, %{status: 200}} -> {:ok, response}
-        other -> 
+        {:ok, %{status: 200, body: :too_large}} ->
+          debug(url, "body over the size limit")
+          nil
+
+        {:ok, %{status: 200}} ->
+          {:ok, response}
+
+        other ->
           debug(other, url)
           nil
       end
@@ -211,14 +260,7 @@ defmodule Faviconic do
 
   defp get_headers(url) do
     if full_uri?(url) do
-      case {_code, response} =
-             Req.head(
-               url,
-               user_agent: @user_agent,
-               receive_timeout: @timeout_ms,
-               max_redirects: 3,
-               raw: true
-             ) do
+      case {_code, response} = Req.head(url, req_options(raw: true)) do
         {:ok, %{status: 200}} -> {:ok, response}
         _ -> nil
       end
@@ -229,16 +271,13 @@ defmodule Faviconic do
     if full_uri?(url) do
       case Req.get(
              url,
-             user_agent: @user_agent,
-             receive_timeout: @timeout_ms,
-             max_redirects: 3,
-             retry: false,
-             raw: true,
-             # Some signed asset URLs reject HEAD. Stop after the first GET body chunk because only the response headers are needed.
-             into: fn {:data, _data}, {request, response} ->
-               {:halt, {request, response}}
-             end,
-             adapter: ProcessTree.get(:req_adapter) || Req.Finch
+             req_options(
+               raw: true,
+               # Some signed asset URLs reject HEAD. Stop after the first GET body chunk because only the response headers are needed.
+               into: fn {:data, _data}, {request, response} ->
+                 {:halt, {request, response}}
+               end
+             )
            ) do
         {:ok, %{status: status_code} = response} when status_code in 200..299 ->
           {:ok, response}
