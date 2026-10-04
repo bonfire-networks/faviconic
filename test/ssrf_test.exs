@@ -2,7 +2,7 @@ defmodule Faviconic.SSRFTest do
   @moduledoc """
   Faviconic fetches URLs that come from untrusted input (a page URL, or an icon link found in a fetched page), so it must never reach a private or loopback address, on any hop.
 
-  The targets are real `Bypass` servers on loopback: a refusal is proven by the server never being hit, and the positive cases fetch the same kind of target once its `host:port` is allowlisted. `ReqSSRF` has its own tests for address ranges and notations, so these only check that the check runs on each of Faviconic's requests, and that the allowlist doesn't switch it off for other hosts or later hops.
+  The sites here are real HTTP servers running on this machine (`Bypass`). A test that expects a fetch to be refused checks that the server never received it. Next to it, a test where the server's `host:port` is allowlisted checks that the same fetch does arrive, which shows it really would have been made. `ReqSSRF` has its own tests for which addresses count as private, so these only check that the check runs on each of Faviconic's requests, and that the allowlist doesn't switch it off for other hosts or later redirects.
   """
   use ExUnit.Case, async: false
 
