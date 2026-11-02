@@ -6,6 +6,8 @@ defmodule Faviconic.SSRFTest do
   """
   use ExUnit.Case, async: false
 
+  @moduletag :bypass
+
   @png <<137, 80, 78, 71, 13, 10, 26, 10>> <> :binary.copy(<<0>>, 64)
 
   setup do
